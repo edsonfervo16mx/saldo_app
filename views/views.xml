@@ -30,21 +30,55 @@
 						<field name="notas" />
 					</group>
 				</sheet>
-				<!--
-				<div class="oe_chatter">
-					<field name="message_ids" widget="mail_thread" />
-				</div>
-				-->
-				<!-- -->
 				<div class="oe_chatter">
 	                <field name="message_follower_ids" widget="mail_followers"/>
 	                <field name="message_ids" widget="mail_thread"/>
 	            </div>
-	        	<!-- -->
 			</form>
 		</field>
 	</record>
 	<!-- -->
+
+
+	<!-- -->
+	<record model="ir.ui.view" id="view_form_movimiento_segun_tipo">
+		<field name="name">view.form.sa.movimiento.segun.tipo</field>
+		<field name="model">sa.movimiento</field>
+		<field name="arch" type="xml">
+			<form>
+				<sheet>
+					<group>
+						<field name="type_move" widget="radio" required="1" invisible="1" />
+						<field name="name" required="1"/>
+					</group>
+					<group>
+						<group>
+							<!--<field name="currency_id" invisible="1"></field>-->
+							<field name="currency_id"></field>
+							<field name="amount" required="1" widget="monetary" options="{'currency_field':'currency_id'}" />
+							<field name="date" required="1" />
+						</group>
+						<group>
+							<field name="tag_ids" widget="many2many_tags" context="{'default_type_move':type_move}" attrs="{'readonly':[('amount','&lt;',50)]}" options="{'no_quick_create':True,'no_create_edit': True}" />
+							<field name="category_id" domain="[('type_move','=',type_move)]" context="{'default_type_move':type_move,'default_name':'Nueva categoria'}" attrs="{'required':[('amount','&gt;',100)]}" options="{'no_open':True}"/>
+							<field name="user_id" />
+							<field name="email" />
+						</group>
+					</group>
+					<group>
+						<field name="receipt_image" widget="image" attrs="{'invisible':[('type_move','=','ingreso')]}" />
+						<field name="notas" />
+					</group>
+				</sheet>
+				<div class="oe_chatter">
+	                <field name="message_follower_ids" widget="mail_followers"/>
+	                <field name="message_ids" widget="mail_thread"/>
+	            </div>
+			</form>
+		</field>
+	</record>
+	<!-- -->
+
 
 	<!-- -->
 	<record model="ir.ui.view" id="view_tree_movimiento">
@@ -55,6 +89,24 @@
 				<field name="date" optional="show" />
 				<field name="name" />
 				<field name="type_move" optional="show" />
+				<field name="amount" widget="monetary" options="{'currency_field':'currency_id'}" />
+				<field name="tag_ids" optional="hide" widget="many2many_tags" />
+				<field name="category_id" optional="hide" />
+				<field name="currency_id" invisible="1" />
+			</tree>
+		</field>
+	</record>
+	<!-- -->
+
+	<!-- -->
+	<record model="ir.ui.view" id="view_tree_movimiento_segun_tipo">
+		<field name="name">view.tree.sa.movimiento.segun.tipo</field>
+		<field name="model">sa.movimiento</field>
+		<field name="arch" type="xml">
+			<tree decoration-success="type_move == 'ingreso'" decoration-danger="type_move == 'gasto'">
+				<field name="date" optional="show" />
+				<field name="name" />
+				<field name="type_move" invisible="1" />
 				<field name="amount" widget="monetary" options="{'currency_field':'currency_id'}" />
 				<field name="tag_ids" optional="hide" widget="many2many_tags" />
 				<field name="category_id" optional="hide" />
@@ -94,6 +146,31 @@
 	<!-- -->
 
 	<!-- -->
+	<record model="ir.ui.view" id="view_search_movimiento_ingresos">
+		<field name="name">view.search.sa.movimiento.ingresos</field>
+		<field name="model">sa.movimiento</field>
+		<field name="arch" type="xml">
+			<search>
+				<field name="name" />
+				<field name="notas" />
+				<field name="category_id" />
+				<field name="tag_ids" />
+
+				<filter name="filter_tipo_today" string="Hoy" domain="[('date','&gt;=',datetime.datetime.now().strftime('%Y-%m-%d 00:00:00')),('date','&lt;=',datetime.datetime.now().strftime('%Y-%m-%d 23:59:59'))]" />
+				<filter name="filter_this_week" string="Ultimos 7 días" domain="[('date','&lt;=',context_today().strftime('%Y-%m-%d 23:59:59')),('date','&gt;=',(context_today()-datetime.timedelta(days=7)).strftime('%Y-%m-%d 00:00:00'))]" />
+				<!-- Filtros-->
+
+				<!-- Grupos -->
+				<filter name="group_type_move" string="Tipo" context="{'group_by':'type_move'}" />
+				<filter name="group_date" string="Fecha" context="{'group_by':'date'}" />
+				<!-- Grupos -->
+
+			</search>
+		</field>
+	</record>  
+	<!-- -->
+
+	<!-- -->
 	<record model="ir.ui.view" id="view_form_category">
 		<field name="name">view.form.category</field>
 		<field name="model">sa.category</field>
@@ -111,11 +188,59 @@
 	</record>
 	<!-- -->
 
+	<!-- -->
+	<record model="ir.ui.view" id="view_calendar_movimientos_ingresos">
+		<field name="name">view.calendar.movimientos.ingresos</field>
+		<field name="model">sa.movimiento</field>
+		<field name="arch" type="xml">
+			<calendar date_start="date" mode="month">
+				<field name="name"/>
+			</calendar>
+		</field>
+	</record>
+	<!-- -->
+
+	<!-- Acciones de ventana VIEW -->
+	<record model="ir.actions.act_window.view" id="action_window_view_tree_movimientos_segun_tipo">
+		<field name="view_mode">tree</field>
+		<field name="view_id" ref="saldo_app.view_tree_movimiento_segun_tipo" />
+	</record>
+
+	<record model="ir.actions.act_window.view" id="action_window_view_form_movimientos_segun_tipo">
+		<field name="view_mode">form</field>
+		<field name="view_id" ref="saldo_app.view_form_movimiento_segun_tipo" />
+	</record>
+	<!-- Acciones de ventana VIEW -->
+
 	<!-- Acciones de ventana -->
 	<record model="ir.actions.act_window" id="saldo_app.action_view_movimiento">
 		<field name="name">Movimientos</field>
 		<field name="res_model">sa.movimiento</field>
+		<field name="limit">5</field>
 	</record>
+
+
+	<!-- aplicando filtros a la accion de ventana para movimientos (ingresos,gastos) -->
+	<record model="ir.actions.act_window" id="saldo_app.action_view_movimiento_ingreso">
+		<field name="name">Ingresos</field>
+		<field name="res_model">sa.movimiento</field>
+		<field name="domain">[('type_move','=','ingreso')]</field>
+		<field name="context">{'default_type_move':'ingreso'}</field>
+		<field name="search_view_id" ref="saldo_app.view_search_movimiento_ingresos" />
+		<field name="view_mode">tree,form,calendar</field>
+		<field name="view_ids" eval="[(4,ref('saldo_app.action_window_view_tree_movimientos_segun_tipo')),(4,ref('saldo_app.action_window_view_form_movimientos_segun_tipo'))]"></field>
+		<field name="help" type="xml">
+			<h1>Empieza creando tu primer movimiento</h1>
+		</field>
+	</record>
+
+	<record model="ir.actions.act_window" id="saldo_app.action_view_movimiento_gasto">
+		<field name="name">Gastos</field>
+		<field name="res_model">sa.movimiento</field>
+		<field name="domain">[('type_move','=','gasto')]</field>
+		<field name="context">{'default_type_move':'gasto'}</field>
+	</record>
+	<!-- -->
 
 	<record model="ir.actions.act_window" id="saldo_app.action_view_categoria">
 		<field name="name">Categorias</field>
@@ -164,7 +289,14 @@
 
 	<menuitem id="menu_ajustes" name="Ajustes" parent="saldo_app.menu_main_saldoapp" action="saldo_app.action_view_categoria"/>
 	<!-- Menus hijos -->
-	<menuitem id="menu_movimiento" name="Movimientos" parent="saldo_app.menu_main_saldoapp" action="saldo_app.action_view_movimiento" />
+	<!--<menuitem id="menu_movimiento" name="Movimientos" parent="saldo_app.menu_main_saldoapp" action="saldo_app.action_view_movimiento" />-->
+
+	<!-- -->
+	<menuitem id="menu_movimiento" name="Movimientos" parent="saldo_app.menu_main_saldoapp"/>
+	<menuitem id="menu_movimiento_todo" name="Todos" parent="saldo_app.menu_movimiento" action="saldo_app.action_view_movimiento"/>
+	<menuitem id="menu_movimiento_ingreso" name="Ingresos" parent="saldo_app.menu_movimiento" action="saldo_app.action_view_movimiento_ingreso" />
+	<menuitem id="menu_movimiento_gasto" name="Gastos" parent="saldo_app.menu_movimiento" action="saldo_app.action_view_movimiento_gasto" />
+	<!-- -->
 
 	<menuitem id="menu_categorias" name="Categorias" parent="saldo_app.menu_ajustes" action="saldo_app.action_view_categoria" />
 
