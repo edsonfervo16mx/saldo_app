@@ -1,5 +1,6 @@
 from odoo import fields, models, api
 from odoo.exceptions import ValidationError
+from datetime import datetime
 
 class Movimiento(models.Model):
 	_name = "sa.movimiento" # nombre tecnico de la tabla sa_movimiento
@@ -90,12 +91,16 @@ class ResUsers(models.Model):
 	movimiento_ids = fields.One2many("sa.movimiento","user_id")
 	total_ingresos = fields.Float("Total de Ingresos",compute="_compute_movimientos")
 	total_egresos = fields.Float("Total de gastos",compute="_compute_movimientos")
+	count_movimientos = fields.Integer("Cantidad de movimientos por mes",compute="_compute_movimientos")
 
 	@api.depends("movimiento_ids")
 	def _compute_movimientos(self):
 		for record in self:
 			record.total_ingresos = sum(record.movimiento_ids.filtered(lambda r:r.type_move == 'ingreso').mapped("amount"))
 			record.total_egresos = sum(record.movimiento_ids.filtered(lambda r:r.type_move == 'gasto').mapped("amount"))
+			mes = datetime.now().month
+			movs = record.movimiento_ids.filtered(lambda r: r.create_date.month == mes)
+			record.count_movimientos = len(movs)
 
 	def mi_cuenta(self):
 		return{
